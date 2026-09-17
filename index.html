@@ -170,6 +170,10 @@
       Two kinds of work, and they feed each other. I build <strong>complete games</strong> —
       gameplay systems, AI opponents, art direction. And I build the <strong>pipelines</strong>
       that let a small team ship games at a rate a small team shouldn't be able to.
+      <br><br>
+      <strong>This page runs in order.</strong> It starts in 2025 with parsing someone else's game
+      into a graph, and ends in 2026 with shipping my own — because each step only became possible
+      because of the one before it.
     </p>
     <div class="facts">
       <div class="fact"><b>20</b><span>shipped titles I built<br>or produced the art for</span></div>
@@ -180,15 +184,363 @@
   </div>
 </div>
 
-<!-- ═════ 1. BUILT END TO END ═════ -->
+
+<!-- ═════ 1. 2025 · READING GAMES ═════ -->
 <section class="alt">
 <div class="wrap">
   <div class="shead">
-    <div class="snum">01 / BUILT END TO END</div>
+    <div class="snum">2025 · WHERE IT STARTED</div>
+    <h2>First, read the game</h2>
+    <p class="sdek">
+      Before anything could be generated, the games we already owned had to be understood
+      mechanically — not played, parsed. Everything further down this page stands on this.
+    </p>
+  </div>
+
+  <div class="split">
+    <div class="sysc"><div class="ico">01</div>
+      <h4>A game as a knowledge graph</h4>
+      <p>A Construct 3 project is a zip of interlocking XML. I parsed <code>.c3p</code> files into a
+         Neo4j graph through five LLM passes — layouts, event sheets, object types and assets, each
+         with the dependencies that connect them. Once a game is a graph, you can ask it questions
+         instead of reading it.</p>
+      <div class="res">Neo4j · five passes · the substrate for everything below</div></div>
+
+    <div class="sysc"><div class="ico">02</div>
+      <h4>Two things that graph made possible</h4>
+      <p><strong>Structural similarity</strong> across a 241-game corpus — finding games that are
+         built alike rather than merely tagged alike. And <strong>advertisement removal</strong>:
+         stripping store, ad and attribution content out of a game, taken through five versions and
+         used to produce a <strong>7,102-record fine-tuning dataset</strong>.</p>
+      <div class="res">241-game corpus · 7,102 training records</div></div>
+  </div>
+
+  <div class="callouts">
+    <div class="callout"><b>Then: get the game out of its editor</b>
+      <span>October 2025. <code>c3p_to_h5</code> tried to lift Construct projects into plain HTML/JS,
+      through four versions in eight days.</span></div>
+    <div class="callout"><b>And abandon it when it doesn't hold</b>
+      <span>It was dropped. Normalising <em>already-exported</em> H5 from any engine turned out to be
+      the tractable problem, and replaced it — the first of several times the honest move was to
+      reverse.</span></div>
+    <div class="callout"><b>What carried forward</b>
+      <span>The graph, the corpus, and a working definition of what a game <em>is</em> structurally.
+      Every later pipeline consumes some version of it.</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ═════ 2. LATE 2025 → EARLY 2026 · ASSETS ═════ -->
+<section>
+<div class="wrap">
+  <div class="shead">
+    <div class="snum">NOV 2025 → FEB 2026 · THE ASSET PROBLEM</div>
+    <h2>Retrieve before you generate</h2>
+    <p class="sdek">
+      Generating every asset from scratch is slow, expensive and inconsistent. We already owned
+      thousands of them. The question was whether a library could answer first.
+    </p>
+  </div>
+
+  <div class="split">
+    <div class="sysc"><div class="ico">A</div>
+      <h4>GAL — the Global Asset Library</h4>
+      <p>Build a library out of the games already owned, retrieve from it by plain description, and
+         fall through to generation only on a miss. Evaluated properly rather than assumed: three
+         arms — baseline, GAL, and sequential — measured across three titles.</p>
+      <div class="res">Retrieval first, generation as the fallback</div></div>
+
+    <div class="sysc"><div class="ico">B</div>
+      <h4>Then into production</h4>
+      <p><strong>182 commits.</strong> Semantic embedding with fixed asset vocabularies, image
+         clustering so near-duplicates stop crowding results, a retrieval API, writing newly
+         generated assets back into the library, and an intermediate-representation workflow for
+         modifying a game rather than rebuilding it.</p>
+      <div class="res">182 commits · retrieval API · IR modification workflow</div></div>
+  </div>
+
+  <div class="callouts">
+    <div class="callout"><b>Fixed vocabularies beat free text</b>
+      <span>An open description space makes two assets that mean the same thing embed differently.
+      Constraining the vocabulary is what made retrieval land.</span></div>
+    <div class="callout"><b>Clustering is a retrieval fix, not a storage fix</b>
+      <span>Near-duplicates don't waste disk — they waste the top of every result list. Collapsing
+      them was worth more than any ranking change.</span></div>
+    <div class="callout"><b>Write the generated ones back</b>
+      <span>Every miss that gets generated is a future hit. The library compounds only if generation
+      feeds it.</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ═════ 3. FEB → MAY 2026 · GENERATING A GAME ═════ -->
+<section class="alt">
+<div class="wrap">
+  <div class="shead">
+    <div class="snum">FEB → MAY 2026 · GENERATING A WHOLE GAME</div>
+    <h2>Subsystems I owned</h2>
+    <p class="sdek">
+      The company's main generation platform is a shared repository with several contributors.
+      These are the subsystems I designed and built inside it — <strong>218 commits between
+      February and May 2026</strong>.
+    </p>
+  </div>
+
+  <div class="sys">
+    <div class="sysc"><div class="ico">01</div>
+      <h4>Quality benchmarking for generated art</h4>
+      <p>Art quality had no external yardstick, so it was luck. I built the system that pulls real
+         competitor screenshots, scores <em>each asset individually</em> against them with a vision
+         model, and writes the critique back into the next generation pass.</p>
+      <div class="res">First run on a new title: 8.5/10 against a 7.5 bar — no second pass needed</div></div>
+
+    <div class="sysc"><div class="ico">02</div>
+      <h4>Self-correcting layout generation</h4>
+      <p>Layouts were generated once and frozen — whatever came out, shipped. I inlined an
+         evaluate-and-improve loop into the main path so every layout critiques and repairs itself
+         before anything downstream consumes it.</p>
+      <div class="res">Quality checking went from one opt-in mode to all production traffic</div></div>
+
+    <div class="sysc"><div class="ico">03</div>
+      <h4>Scoring and optimisation services</h4>
+      <p>Competitor scoring existed only as an offline script. I turned it into production services:
+         API routes, live progress streaming, task recovery across restarts, and concurrency
+         guards. One of them proposes its own improvement experiments and runs them.</p>
+      <div class="res">The first component that decides and acts, rather than only evaluating</div></div>
+
+    <div class="sysc"><div class="ico">04</div>
+      <h4>Long-term memory for a design agent</h4>
+      <p>The conversational agent that helps users design a game forgot everything between turns.
+         I built its memory: a schema for what a game concept <em>is</em>, staged extraction on
+         separate cadences, and safe merges when a background thread and a save race.</p>
+      <div class="res">22 commits over two days, from schema design to race-condition hardening</div></div>
+
+    <div class="sysc"><div class="ico">05</div>
+      <h4>Deterministic physics kernel</h4>
+      <p>Real-time games behaved unpredictably because collision and gravity were rewritten from
+         scratch every generation. I replaced that with a fixed-timestep loop, an AABB and circle
+         collision library, and continuous input-state tracking.</p>
+      <div class="res">Physics became reproducible instead of re-invented per game</div></div>
+
+    <div class="sysc"><div class="ico">06</div>
+      <h4>Design/code separation for 3D</h4>
+      <p>One prompt was asked to decide what a chess piece should look like <em>and</em> write the
+         code to build it, and did neither well. I split it: a design stage emits a pure visual
+         spec — materials, mesh composition, camera, lighting — and generation consumes it.</p>
+      <div class="res">Passed automated validation with zero errors at hand-polished quality</div></div>
+  </div>
+
+  <div style="margin-top:52px">
+    <h3 style="font-size:22px;font-weight:800;letter-spacing:-.7px">What comes out the other end</h3>
+    <p style="margin-top:12px;max-width:720px;color:var(--ink-2);font-size:15px">
+      These interfaces were not drawn by hand. A written brief goes in; layout, asset generation
+      and automated quality scoring produce this, with my rules deciding what "good" meant at
+      each step.
+    </p>
+  </div>
+
+  <div class="shot-grid">
+    <figure class="shot">
+      <img src="assets/tarneeb-menu.jpg" alt="An ornate Arabian-styled card game menu in gold and blue geometric patterning">
+      <figcaption><b>Tarneeb — menu.</b> Style intent is extracted once from the brief, then shared by every asset so nothing drifts.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/gomoku-menu.jpg" alt="A warm cartoon landscape menu screen with sun and stylised trees">
+      <figcaption><b>Gomoku — menu.</b> Different brief, same pipeline. This asset set scored 99/100 against its style spec.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/tarneeb-table.jpg" alt="A green felt card table framed in gold Islamic geometric ornament">
+      <figcaption><b>Tarneeb — table.</b> Decorative surfaces are generated; the playable structure stays engine-drawn.</figcaption>
+    </figure>
+    <figure class="shot">
+      <img src="assets/gomoku-board.jpg" alt="A cartoon wooden board game screen with black and white stones">
+      <figcaption><b>Gomoku — board.</b> The grid is engine-drawn, never generated — an image grid misaligns stones by pixels.</figcaption>
+    </figure>
+  </div>
+</div>
+</section>
+
+<!-- ═════ 4. APR → JUL 2026 · CONVERSION AGAIN ═════ -->
+<section>
+<div class="wrap">
+  <div class="shead">
+    <div class="snum">APR → JUL 2026 · THE SAME PROBLEM, A HARDER TARGET</div>
+    <h2>Rebuild the game in an engine</h2>
+    <p class="sdek">
+      October 2025 tried to edit a game's HTML into shape and stopped. This is the same problem
+      taken seriously: don't edit the web build — reconstruct it as a native engine project.
+    </p>
+  </div>
+
+  <div class="split">
+    <div class="sysc"><div class="ico">A</div>
+      <h4>h5-to-godot — engine conversion</h4>
+      <p>Six stages converting browser games into Godot 4 projects: structural analysis, scene
+         planning, script generation, cross-file API reconciliation, static analysis, then an
+         automated repair loop. Static checks catch what a parser can see; a review pass catches
+         what needs meaning. Validated across four genres, then exported back to the web.</p>
+      <div class="res">301 commits · web game in, art-complete web build out</div></div>
+
+    <div class="sysc"><div class="ico">B</div>
+      <h4>Why a second attempt was worth it</h4>
+      <p>Editing HTML means inheriting every decision the original made. Rebuilding in an engine
+         means the output has a real scene tree, real nodes and real scripts — things a later
+         pipeline can reason about. The first attempt failed because it was patching; this one
+         works because it is translating.</p>
+      <div class="res">The abandoned approach, re-aimed rather than retried</div></div>
+  </div>
+</div>
+</section>
+
+<!-- ═════ 5. MAY → AUG 2026 · VOLUME ═════ -->
+<section class="alt">
+<div class="wrap">
+  <div class="shead">
+    <div class="snum">MAY → AUG 2026 · SHIPPING AT VOLUME</div>
+    <h2>Twenty titles, without dropping the bar</h2>
+    <p class="sdek">
+      With the graph, the asset library and the generation platform in place, the constraint
+      stopped being "can we make one" and became "can we make twenty, to a consistent standard,
+      on a schedule."
+    </p>
+  </div>
+
+  <div class="wgrid">
+    <div class="wcard">
+      <div class="thumb thumb-set">
+        <ul><li>Backgammon</li><li>Reversi</li><li>Pool</li><li>Darts</li><li>Scrabble</li><li>Bridge</li></ul>
+      </div>
+      <div class="body">
+        <h4>Six classic titles in four days</h4>
+        <div class="meta">May 2026 · complete products, not prototypes</div>
+        <p>Backgammon, Reversi, Pool, Darts, Scrabble and Bridge — each with full rules, an AI
+           opponent, music, sound and a complete art set. Detailed below.</p>
+        <div class="tags"><span class="tag">Game AI</span><span class="tag">Physics</span><span class="tag">Rules engines</span></div>
+      </div>
+    </div>
+
+    <div class="wcard">
+      <div class="thumb"><img src="assets/clinic.jpg" alt="A stylised 3D clinic waiting room viewed from above"></div>
+      <div class="body">
+        <h4>14 titles re-arted in two days</h4>
+        <div class="meta">183 art &amp; audio assets · July 2026</div>
+        <p>A full art and audio pass across fourteen live multiplayer titles, each submitted for
+           release review. Every asset produced and integrated through the pipeline I built;
+           gameplay and server logic untouched in all fourteen.</p>
+        <div class="tags"><span class="tag">Art direction</span><span class="tag">Asset generation</span><span class="tag">Audio</span></div>
+      </div>
+    </div>
+
+    <div class="wcard">
+      <div class="thumb"><img src="assets/market.jpg" alt="A stylised 3D supermarket aisle with produce and shoppers"></div>
+      <div class="body">
+        <h4>3D management sims — the deep end</h4>
+        <div class="meta">Care Shift · supermarket · hotel</div>
+        <p>Where a title needed more than a re-art, it got a full 3D production pass. Care Shift —
+           the clinic in that list of fourteen — took 33 models, 33 textures and 9 sound effects on
+           its own. Every asset path keeps a procedural fallback, so a failed load degrades to the
+           original art instead of a blank screen.</p>
+        <div class="tags"><span class="tag">Three.js</span><span class="tag">GLB</span><span class="tag">Texturing</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chips">
+    <span class="chip">Among Us <i>1946</i></span>
+    <span class="chip">Battle Royale <i>1947</i></span>
+    <span class="chip">Court of Whispers <i>1950</i></span>
+    <span class="chip">Skull Call <i>1951</i></span>
+    <span class="chip">Steal Tycoon <i>1952</i></span>
+    <span class="chip">Restaurant Rush <i>1956</i></span>
+    <span class="chip">Grand Plaza <i>1958</i></span>
+    <span class="chip">APEX AUTO <i>1971</i></span>
+    <span class="chip">POP VAULT <i>1974</i></span>
+    <span class="chip">Horizon Fuel &amp; Go <i>1977</i></span>
+    <span class="chip">Iron Republic <i>1983</i></span>
+    <span class="chip">Fashion Boutique</span>
+    <span class="chip">Pet Vet</span>
+    <span class="chip">Hospital Clinic</span>
+  </div>
+
+  <div class="tbl" style="margin-top:34px">
+    <table>
+      <thead><tr><th>Title</th><th>The hard part</th><th>How I solved it</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Pool</strong></td><td>Physics decides whether the rules can be judged at all</td>
+            <td>Wrote the physics from scratch — elastic collision, friction decay, pocket tolerance. No third-party library. AI aims by ghost-ball.</td></tr>
+        <tr><td><strong>Bridge</strong></td><td>Bidding and play are different problems; four hands plus a bidding box must fit one phone screen</td>
+            <td>Separate bidding and play engines. Dedicated portrait and landscape layouts, both overflow-free.</td></tr>
+        <tr><td><strong>Backgammon</strong></td><td>Move generation, hitting, bearing off and the doubling cube are four coupled systems</td>
+            <td>Implemented the full doubling cube — offer, accept, drop — with the AI deciding on position. Most web versions omit it.</td></tr>
+        <tr><td><strong>Reversi</strong></td><td>Not the rules — an AI that doesn't feel stupid</td>
+            <td>Minimax with alpha-beta pruning, weighting corners, mobility and disc count. A self-playing preview teaches the game before you start.</td></tr>
+        <tr><td><strong>Scrabble</strong></td><td>Word validation plus a large placement search space</td>
+            <td>O(1) dictionary lookup and a time-bounded search that returns a move inside one second. Full blank-tile handling.</td></tr>
+        <tr><td><strong>Darts</strong></td><td>Throw feel is the entire experience</td>
+            <td>Anisotropic Gaussian scatter — wider horizontally than vertically, the way a real wrist wobbles. Verified the checkout table by hand and corrected an illegal route.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:56px">
+    <h3 style="font-size:22px;font-weight:800;letter-spacing:-.7px">The pipeline that made the two-day pass possible</h3>
+    <p style="margin-top:12px;max-width:760px;color:var(--ink-2);font-size:15px">
+      Built in July as a persona-driven loop — <strong>80 commits in eight days</strong> — then
+      rebuilt lean in August once games began declaring their own art needs in a manifest. The
+      second version is the one still in use.
+    </p>
+  </div>
+
+  <div class="split" style="margin-top:24px">
+    <div class="sysc"><div class="ico">A</div>
+      <h4>forge_lite — art &amp; audio replacement</h4>
+      <p>Nine stages: read a game's asset manifest, generate models, textures and sound, normalise
+         and optimise them, wire them through declared seams, capture screenshots, then gate the
+         result before anything is accepted. No per-game special cases — 48 of its tests exist
+         purely to prove that.</p>
+      <div class="res">30 commits · 185 automated tests · empty repo to production in 2 days</div></div>
+
+    <div class="sysc"><div class="ico">B</div>
+      <h4>A cover pipeline that refuses to design covers</h4>
+      <p>A batch of eight store covers was rejected for sharing one template. The conclusion shaped
+         the tool: anything reusable enough to automate is exactly the part that must not be shared
+         between games. So it automates measurement, gates and handoff — and marks designing the
+         cover, and judging it, as steps it will never take.</p>
+      <div class="res">Measured host geometry, per-game art, no generated templates</div></div>
+  </div>
+
+  <figure class="vid" style="margin-top:32px;max-width:720px;margin-left:auto;margin-right:auto">
+    <video controls preload="none" poster="assets/tower-poster.jpg" playsinline>
+      <source src="assets/tower-reskin.mp4" type="video/mp4">
+    </video>
+    <figcaption><b>Automated art replacement.</b> Same build, same code, same camera — only the asset set
+      was swapped by the pipeline. Recorded side by side from two live sessions.</figcaption>
+  </figure>
+
+  <div class="callouts">
+    <div class="callout"><b>Art may recolour, never add</b>
+      <span>New geometry changes collision and where a player looks — that crosses from art into game
+      design, so the pipeline forbids it.</span></div>
+    <div class="callout"><b>Benchmarked against the market</b>
+      <span>Generated art is scored asset-by-asset against real competitor screenshots, and the
+      critique is fed back into the next generation pass automatically.</span></div>
+    <div class="callout"><b>Determinism where it belongs</b>
+      <span>Export and packaging are pure code with no model in the loop. A mechanical step gains
+      nothing from a language model and gains a failure mode.</span></div>
+  </div>
+</div>
+</section>
+
+<!-- ═════ 6. AUG 2026 · GAMES OF MY OWN ═════ -->
+<section>
+<div class="wrap">
+  <div class="shead">
+    <div class="snum">AUG 2026 · BUILT END TO END</div>
     <h2>Games I made myself</h2>
     <p class="sdek">
-      Sole author — every commit in these repositories is mine. Gameplay, art direction,
-      asset production and release.
+      With the machinery working, the last step was to use it on my own titles. Sole author —
+      every commit in these repositories is mine. Gameplay, art direction, asset production and
+      release.
     </p>
   </div>
 
@@ -269,272 +621,11 @@
 </div>
 </section>
 
-<!-- ═════ 2. SHIPPED AT SCALE ═════ -->
-<section>
-<div class="wrap">
-  <div class="shead">
-    <div class="snum">02 / SHIPPED AT SCALE</div>
-    <h2>Volume, without dropping the bar</h2>
-    <p class="sdek">
-      The interesting constraint in this job isn't making one good thing. It's making twenty,
-      to a consistent standard, on a schedule.
-    </p>
-  </div>
-
-  <div class="wgrid">
-    <div class="wcard">
-      <div class="thumb"><img src="assets/clinic.jpg" alt="A stylised 3D clinic waiting room viewed from above"></div>
-      <div class="body">
-        <h4>14 titles re-arted in two days</h4>
-        <div class="meta">183 art &amp; audio assets · July 2026</div>
-        <p>A full art and audio pass across fourteen live multiplayer titles, each submitted for
-           release review. Every asset produced and integrated through the pipeline I built;
-           gameplay and server logic untouched in all fourteen.</p>
-        <div class="tags"><span class="tag">Art direction</span><span class="tag">Asset generation</span><span class="tag">Audio</span></div>
-      </div>
-    </div>
-
-    <div class="wcard">
-      <div class="thumb"><img src="assets/market.jpg" alt="A stylised 3D supermarket aisle with produce and shoppers"></div>
-      <div class="body">
-        <h4>3D management sims — the deep end</h4>
-        <div class="meta">Care Shift · supermarket · hotel</div>
-        <p>Where a title needed more than a re-art, it got a full 3D production pass. Care Shift —
-           the clinic in that list of fourteen — took 33 models, 33 textures and 9 sound effects on
-           its own. Every asset path keeps a procedural fallback, so a failed load degrades to the
-           original art instead of a blank screen.</p>
-        <div class="tags"><span class="tag">Three.js</span><span class="tag">GLB</span><span class="tag">Texturing</span></div>
-      </div>
-    </div>
-
-    <div class="wcard">
-      <div class="thumb thumb-set">
-        <ul><li>Backgammon</li><li>Reversi</li><li>Pool</li><li>Darts</li><li>Scrabble</li><li>Bridge</li></ul>
-      </div>
-      <div class="body">
-        <h4>Six classic titles in four days</h4>
-        <div class="meta">Complete products, not prototypes</div>
-        <p>Backgammon, Reversi, Pool, Darts, Scrabble and Bridge — each with full rules, an AI
-           opponent, music, sound and a complete art set. Detailed below.</p>
-        <div class="tags"><span class="tag">Game AI</span><span class="tag">Physics</span><span class="tag">Rules engines</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="chips">
-    <span class="chip">Among Us <i>1946</i></span>
-    <span class="chip">Battle Royale <i>1947</i></span>
-    <span class="chip">Court of Whispers <i>1950</i></span>
-    <span class="chip">Skull Call <i>1951</i></span>
-    <span class="chip">Steal Tycoon <i>1952</i></span>
-    <span class="chip">Restaurant Rush <i>1956</i></span>
-    <span class="chip">Grand Plaza <i>1958</i></span>
-    <span class="chip">APEX AUTO <i>1971</i></span>
-    <span class="chip">POP VAULT <i>1974</i></span>
-    <span class="chip">Horizon Fuel &amp; Go <i>1977</i></span>
-    <span class="chip">Iron Republic <i>1983</i></span>
-    <span class="chip">Fashion Boutique</span>
-    <span class="chip">Pet Vet</span>
-    <span class="chip">Hospital Clinic</span>
-  </div>
-
-  <div class="tbl" style="margin-top:34px">
-    <table>
-      <thead><tr><th>Title</th><th>The hard part</th><th>How I solved it</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Pool</strong></td><td>Physics decides whether the rules can be judged at all</td>
-            <td>Wrote the physics from scratch — elastic collision, friction decay, pocket tolerance. No third-party library. AI aims by ghost-ball.</td></tr>
-        <tr><td><strong>Bridge</strong></td><td>Bidding and play are different problems; four hands plus a bidding box must fit one phone screen</td>
-            <td>Separate bidding and play engines. Dedicated portrait and landscape layouts, both overflow-free.</td></tr>
-        <tr><td><strong>Backgammon</strong></td><td>Move generation, hitting, bearing off and the doubling cube are four coupled systems</td>
-            <td>Implemented the full doubling cube — offer, accept, drop — with the AI deciding on position. Most web versions omit it.</td></tr>
-        <tr><td><strong>Reversi</strong></td><td>Not the rules — an AI that doesn't feel stupid</td>
-            <td>Minimax with alpha-beta pruning, weighting corners, mobility and disc count. A self-playing preview teaches the game before you start.</td></tr>
-        <tr><td><strong>Scrabble</strong></td><td>Word validation plus a large placement search space</td>
-            <td>O(1) dictionary lookup and a time-bounded search that returns a move inside one second. Full blank-tile handling.</td></tr>
-        <tr><td><strong>Darts</strong></td><td>Throw feel is the entire experience</td>
-            <td>Anisotropic Gaussian scatter — wider horizontally than vertically, the way a real wrist wobbles. Verified the checkout table by hand and corrected an illegal route.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-</section>
-
-<!-- ═════ 3. PIPELINES ═════ -->
+<!-- ═════ 7. HOW I WORK ═════ -->
 <section class="alt">
 <div class="wrap">
   <div class="shead">
-    <div class="snum">03 / PIPELINES</div>
-    <h2>How twenty titles becomes possible</h2>
-    <p class="sdek">
-      Section 02 is only achievable because of this section. Two pipelines, both mine end to
-      end, both public.
-    </p>
-  </div>
-
-  <div class="split">
-    <div class="sysc"><div class="ico">A</div>
-      <h4>forge_lite — art &amp; audio replacement</h4>
-      <p>Nine stages: read a game's asset manifest, generate models, textures and sound, normalise
-         and optimise them, wire them through declared seams, capture screenshots, then gate the
-         result before anything is accepted. No per-game special cases — 48 of its tests exist
-         purely to prove that.</p>
-      <div class="res">30 commits · 185 automated tests · empty repo to production in 2 days</div></div>
-
-    <div class="sysc"><div class="ico">B</div>
-      <h4>h5-to-godot — engine conversion</h4>
-      <p>Six stages converting browser games into native engine projects: structural analysis, scene
-         planning, script generation, cross-file API reconciliation, static analysis, then an
-         automated repair loop. Static checks catch what a parser can see; a review pass catches
-         what needs meaning. Validated across four genres.</p>
-      <div class="res">Closed the loop — web game in, art-complete web build out</div></div>
-  </div>
-
-  <div style="margin-top:52px">
-    <h3 style="font-size:22px;font-weight:800;letter-spacing:-.7px">What comes out the other end</h3>
-    <p style="margin-top:12px;max-width:720px;color:var(--ink-2);font-size:15px">
-      These interfaces were not drawn by hand. A written brief goes in; layout, asset generation
-      and automated quality scoring produce this, with my rules deciding what "good" meant at
-      each step.
-    </p>
-  </div>
-
-  <div class="shot-grid">
-    <figure class="shot">
-      <img src="assets/tarneeb-menu.jpg" alt="An ornate Arabian-styled card game menu in gold and blue geometric patterning">
-      <figcaption><b>Tarneeb — menu.</b> Style intent is extracted once from the brief, then shared by every asset so nothing drifts.</figcaption>
-    </figure>
-    <figure class="shot">
-      <img src="assets/gomoku-menu.jpg" alt="A warm cartoon landscape menu screen with sun and stylised trees">
-      <figcaption><b>Gomoku — menu.</b> Different brief, same pipeline. This asset set scored 99/100 against its style spec.</figcaption>
-    </figure>
-    <figure class="shot">
-      <img src="assets/tarneeb-table.jpg" alt="A green felt card table framed in gold Islamic geometric ornament">
-      <figcaption><b>Tarneeb — table.</b> Decorative surfaces are generated; the playable structure stays engine-drawn.</figcaption>
-    </figure>
-    <figure class="shot">
-      <img src="assets/gomoku-board.jpg" alt="A cartoon wooden board game screen with black and white stones">
-      <figcaption><b>Gomoku — board.</b> The grid is engine-drawn, never generated — an image grid misaligns stones by pixels.</figcaption>
-    </figure>
-  </div>
-
-  <figure class="vid" style="margin-top:18px;max-width:720px;margin-left:auto;margin-right:auto">
-    <video controls preload="none" poster="assets/tower-poster.jpg" playsinline>
-      <source src="assets/tower-reskin.mp4" type="video/mp4">
-    </video>
-    <figcaption><b>Automated art replacement.</b> Same build, same code, same camera — only the asset set
-      was swapped by the pipeline. Recorded side by side from two live sessions.</figcaption>
-  </figure>
-
-  <div class="callouts">
-    <div class="callout"><b>Art may recolour, never add</b>
-      <span>New geometry changes collision and where a player looks — that crosses from art into game
-      design, so the pipeline forbids it.</span></div>
-    <div class="callout"><b>Benchmarked against the market</b>
-      <span>Generated art is scored asset-by-asset against real competitor screenshots, and the
-      critique is fed back into the next generation pass automatically.</span></div>
-    <div class="callout"><b>Determinism where it belongs</b>
-      <span>Export and packaging are pure code with no model in the loop. A mechanical step gains
-      nothing from a language model and gains a failure mode.</span></div>
-  </div>
-</div>
-</section>
-
-<!-- ═════ 4. TEAM CODEBASE ═════ -->
-<section>
-<div class="wrap">
-  <div class="shead">
-    <div class="snum">04 / IN A TEAM CODEBASE</div>
-    <h2>Subsystems I owned</h2>
-    <p class="sdek">
-      The company's main generation platform is a shared repository with several contributors.
-      These are the subsystems I designed and built inside it — <strong>218 commits between
-      February and May 2026</strong>.
-    </p>
-  </div>
-
-  <div class="sys">
-    <div class="sysc"><div class="ico">01</div>
-      <h4>Quality benchmarking for generated art</h4>
-      <p>Art quality had no external yardstick, so it was luck. I built the system that pulls real
-         competitor screenshots, scores <em>each asset individually</em> against them with a vision
-         model, and writes the critique back into the next generation pass.</p>
-      <div class="res">First run on a new title: 8.5/10 against a 7.5 bar — no second pass needed</div></div>
-
-    <div class="sysc"><div class="ico">02</div>
-      <h4>Self-correcting layout generation</h4>
-      <p>Layouts were generated once and frozen — whatever came out, shipped. I inlined an
-         evaluate-and-improve loop into the main path so every layout critiques and repairs itself
-         before anything downstream consumes it.</p>
-      <div class="res">Quality checking went from one opt-in mode to all production traffic</div></div>
-
-    <div class="sysc"><div class="ico">03</div>
-      <h4>Scoring and optimisation services</h4>
-      <p>Competitor scoring existed only as an offline script. I turned it into production services:
-         API routes, live progress streaming, task recovery across restarts, and concurrency
-         guards. One of them proposes its own improvement experiments and runs them.</p>
-      <div class="res">The first component that decides and acts, rather than only evaluating</div></div>
-
-    <div class="sysc"><div class="ico">04</div>
-      <h4>Long-term memory for a design agent</h4>
-      <p>The conversational agent that helps users design a game forgot everything between turns.
-         I built its memory: a schema for what a game concept <em>is</em>, staged extraction on
-         separate cadences, and safe merges when a background thread and a save race.</p>
-      <div class="res">22 commits over two days, from schema design to race-condition hardening</div></div>
-
-    <div class="sysc"><div class="ico">05</div>
-      <h4>Deterministic physics kernel</h4>
-      <p>Real-time games behaved unpredictably because collision and gravity were rewritten from
-         scratch every generation. I replaced that with a fixed-timestep loop, an AABB and circle
-         collision library, and continuous input-state tracking.</p>
-      <div class="res">Physics became reproducible instead of re-invented per game</div></div>
-
-    <div class="sysc"><div class="ico">06</div>
-      <h4>Design/code separation for 3D</h4>
-      <p>One prompt was asked to decide what a chess piece should look like <em>and</em> write the
-         code to build it, and did neither well. I split it: a design stage emits a pure visual
-         spec — materials, mesh composition, camera, lighting — and generation consumes it.</p>
-      <div class="res">Passed automated validation with zero errors at hand-polished quality</div></div>
-  </div>
-</div>
-</section>
-
-<!-- ═════ 5. OPEN SOURCE ═════ -->
-<section class="alt">
-<div class="wrap">
-  <div class="shead">
-    <div class="snum">05 / OPEN SOURCE</div>
-    <h2>Code you can read</h2>
-    <p class="sdek">
-      Both pipelines from section 03 are public. Most of my other work sits in private company
-      repositories, so these are where the engineering is open to inspection.
-    </p>
-  </div>
-
-  <div class="repos">
-    <a class="repo" href="https://github.com/tlx02/forge_lite" target="_blank" rel="noopener">
-      <div class="rn">forge_lite</div>
-      <p>Manifest-driven visual and audio upgrade pipeline for decoupled 3D web games. Generates,
-         normalises, wires and gates assets from a game's manifest — with the gates that stop bad
-         output reaching a build.</p>
-      <div class="rmeta"><span>Python</span><span>185 tests</span><span>public</span></div>
-    </a>
-
-    <a class="repo" href="https://github.com/tlx02/beauty_soul" target="_blank" rel="noopener">
-      <div class="rn">beauty_soul</div>
-      <p>Visual style analysis tooling supporting the art-direction work above.</p>
-      <div class="rmeta"><span>Python</span><span>public</span></div>
-    </a>
-
-  </div>
-</div>
-</section>
-
-<!-- ═════ 6. HOW I WORK ═════ -->
-<section>
-<div class="wrap">
-  <div class="shead">
-    <div class="snum">06 / HOW I WORK</div>
+    <div class="snum">THROUGHOUT · HOW I WORK</div>
     <h2>Judgement, not just output</h2>
     <p class="sdek">
       Generating things is cheap now. Knowing which output is actually correct is the job.
@@ -566,11 +657,27 @@
       <p>I've rolled back three of my own changes after testing contradicted me — including an
         auto-correction that turned out to be fixing a bug in my checker rather than in the asset,
         and would have silently rotated a correct model. <em>Reverting costs far less than letting a
-        confident mistake run across a whole batch.</em></p></div>
+        confident mistake run across a whole batch.</em> The abandoned 2025 conversion attempt at the
+        top of this page is the same instinct at project scale.</p></div>
+  </div>
+
+  <div class="repos" style="margin-top:52px">
+    <a class="repo" href="https://github.com/tlx02/forge_lite" target="_blank" rel="noopener">
+      <div class="rn">forge_lite</div>
+      <p>Manifest-driven visual and audio upgrade pipeline for decoupled 3D web games. Generates,
+         normalises, wires and gates assets from a game's manifest — with the gates that stop bad
+         output reaching a build.</p>
+      <div class="rmeta"><span>Python</span><span>185 tests</span><span>public</span></div>
+    </a>
+
+    <a class="repo" href="https://github.com/tlx02/beauty_soul" target="_blank" rel="noopener">
+      <div class="rn">beauty_soul</div>
+      <p>Visual style analysis tooling supporting the art-direction work above.</p>
+      <div class="rmeta"><span>Python</span><span>public</span></div>
+    </a>
   </div>
 </div>
 </section>
-
 <footer>
 <div class="wrap">
   <div class="fname">Li Xin</div>
